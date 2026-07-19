@@ -1,12 +1,19 @@
 """Synthetic seed data for local development.
 
 Populates:
+  - 1 patient user  (alice@example.com / patient-pass)
+  - 1 staff user    (bob@example.com   / staff-pass)
   - 3 Departments (Cardiology, Dermatology, Orthopedics)
   - 5 Doctors (across the departments)
   - 40 AppointmentSlots (2 days × 4 slots × 5 doctors)
 
-All IDs are deterministic via ``uuid.uuid5`` so re-running this script does
-not duplicate rows (idempotent). No real PII.
+All non-user IDs are deterministic via ``uuid.uuid5`` so re-running this
+script does not duplicate rows (idempotent). The two seeded users have
+fixed UUIDs so tests and demos can refer to them by id, but their
+passwords are bcrypt-hashed and **must** be re-seeded if you change them
+locally (the seed is idempotent on count, not on password).
+
+No real PII.
 
 Note: model imports are deferred to inside ``seed()`` / ``summary()`` to
 break the circular import through ``src.models`` → ``src.database.base``.
@@ -23,6 +30,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from ..auth.passwords import hash_password
 from .base import SessionLocal
 
 
@@ -45,6 +53,27 @@ _SLOTS_PER_DAY = 4
 _START_HOUR = 9  # first slot starts at 09:00 local
 
 
+# Seeded users — fixed UUIDs and well-known credentials so demos and tests
+# can log in without first registering. Both passwords are weak by design
+# and only safe for local development.
+_SEED_USERS = [
+    {
+        "id": "aaaaaaaa-0000-0000-0000-000000000001",
+        "email": "alice@example.com",
+        "name": "Alice Patient",
+        "role": "patient",
+        "password": "patient-pass",
+    },
+    {
+        "id": "bbbbbbbb-0000-0000-0000-000000000002",
+        "email": "bob@example.com",
+        "name": "Bob Staff",
+        "role": "staff",
+        "password": "staff-pass",
+    },
+]
+
+
 def _doctor_id(name: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"doctor:{name}"))
 
@@ -60,7 +89,7 @@ def seed(session: Optional[Session] = None) -> None:
     never closes a session it didn't open.
     """
     # Deferred to break the import cycle described in the module docstring.
-    from ..models import AppointmentSlot, Department, Doctor
+    from ..models import AppointmentSlot, Department, Doctor, User
 
     own_session = session is None
     session = session if session is not None else SessionLocal()
@@ -68,6 +97,19 @@ def seed(session: Optional[Session] = None) -> None:
     try:
         if session.query(Department).count() > 0:
             return  # idempotent: already seeded
+
+        # Seed users first (other tables may FK to them in future features).
+        for spec in _SEED_USERS:
+            session.add(
+                User(
+                    id=spec["id"],
+                    name=spec["name"],
+                    email=spec["email"],
+                    password_hash=hash_password(spec["password"]),
+                    role=spec["role"],
+                    created_at=datetime.utcnow(),
+                )
+            )
 
         for name, dept_id in _DEPARTMENTS:
             session.add(
@@ -116,12 +158,13 @@ def seed(session: Optional[Session] = None) -> None:
 
 def summary(session: Optional[Session] = None) -> dict[str, int]:
     """Return counts of seeded entities (for the verification script)."""
-    from ..models import AppointmentSlot, Department, Doctor
+    from ..models import AppointmentSlot, Department, Doctor, User
 
     own_session = session is None
     session = session if session is not None else SessionLocal()
     try:
         return {
+            "users": session.query(User).count(),
             "departments": session.query(Department).count(),
             "doctors": session.query(Doctor).count(),
             "slots": session.query(AppointmentSlot).count(),
