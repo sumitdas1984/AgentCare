@@ -10,10 +10,18 @@ not duplicate rows (idempotent). No real PII.
 
 Note: model imports are deferred to inside ``seed()`` / ``summary()`` to
 break the circular import through ``src.models`` → ``src.database.base``.
+
+Note: ``seed()`` and ``summary()`` accept an optional ``session``. Pass one
+bound to a private engine to seed a database other than the module-level
+one (used by the test suite). When omitted, they fall back to the production
+``SessionLocal``.
 """
 
 import uuid
 from datetime import datetime, timedelta
+from typing import Optional
+
+from sqlalchemy.orm import Session
 
 from .base import SessionLocal
 
@@ -45,12 +53,18 @@ def _slot_id(doctor_name: str, start_iso: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"slot:{doctor_name}:{start_iso}"))
 
 
-def seed() -> None:
-    """Insert seed data if not already present."""
+def seed(session: Optional[Session] = None) -> None:
+    """Insert seed data if not already present.
+
+    If ``session`` is omitted, ``SessionLocal()`` is used. The function
+    never closes a session it didn't open.
+    """
     # Deferred to break the import cycle described in the module docstring.
     from ..models import AppointmentSlot, Department, Doctor
 
-    session = SessionLocal()
+    own_session = session is None
+    session = session if session is not None else SessionLocal()
+
     try:
         if session.query(Department).count() > 0:
             return  # idempotent: already seeded
@@ -96,14 +110,16 @@ def seed() -> None:
 
         session.commit()
     finally:
-        session.close()
+        if own_session:
+            session.close()
 
 
-def summary() -> dict[str, int]:
+def summary(session: Optional[Session] = None) -> dict[str, int]:
     """Return counts of seeded entities (for the verification script)."""
     from ..models import AppointmentSlot, Department, Doctor
 
-    session = SessionLocal()
+    own_session = session is None
+    session = session if session is not None else SessionLocal()
     try:
         return {
             "departments": session.query(Department).count(),
@@ -111,7 +127,8 @@ def summary() -> dict[str, int]:
             "slots": session.query(AppointmentSlot).count(),
         }
     finally:
-        session.close()
+        if own_session:
+            session.close()
 
 
 if __name__ == "__main__":
