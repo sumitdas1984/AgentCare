@@ -8,8 +8,9 @@ Idempotent: re-running leaves existing tables untouched (CREATE TABLE IF NOT EXI
 """
 
 from pathlib import Path
+from typing import Optional
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import Engine, create_engine, text
 
 from .base import engine_url
 
@@ -17,21 +18,33 @@ from .base import engine_url
 _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 
-def bootstrap(database_url: str | None = None) -> None:
+def bootstrap(
+    database_url: Optional[str] = None,
+    *,
+    engine: Optional[Engine] = None,
+) -> None:
     """Apply schema.sql to the database at ``database_url``.
 
+    If ``engine`` is provided, it is used directly and ``database_url`` is
+    ignored. This lets tests pass a private in-memory engine without touching
+    the module-level singleton in ``base.py``.
+
     Falls back to the URL resolved by ``src.database.base.engine_url``.
-    The PRAGMA hook in ``base.py`` ensures FK enforcement on every connection.
+    The PRAGMA hook in ``base.py`` ensures FK enforcement on every connection
+    when using the production engine; tests should attach the hook to their
+    own engine.
     """
     schema_sql = _SCHEMA_PATH.read_text(encoding="utf-8")
-    engine = create_engine(database_url or engine_url())
+    own_engine = engine is None
+    engine = engine or create_engine(database_url or engine_url())
 
     try:
         with engine.begin() as conn:
             for stmt in _split_statements(schema_sql):
                 conn.exec_driver_sql(stmt)
     finally:
-        engine.dispose()
+        if own_engine:
+            engine.dispose()
 
     # Sanity check: confirm critical tables exist (raises if bootstrap silently did nothing).
     expected = {"User", "Department", "Appointment", "WorkflowRun", "AuditEvent"}

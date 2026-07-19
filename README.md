@@ -29,11 +29,12 @@ Each step is backed by a persistent relational schema and an audit log, so every
 ## Tech Stack
 
 - **Language:** Python 3.13+
-- **Orchestration:** LangGraph / CrewAI / AutoGen / custom state machine
-- **LLM provider:** Anthropic, OpenAI, or Groq (declared explicitly in `pyproject.toml`)
+- **Agent orchestration:** **LangGraph** (chosen 2026-07-19 — fits the explicit `WorkflowRun` state machine with pause/resume on `Escalation`)
+- **LLM provider:** **Anthropic Claude** (chosen 2026-07-19 — strongest safety instruction-following for the no-diagnosis guardrail; client library declared in `pyproject.toml`)
 - **Database:** SQLite (default), PostgreSQL, or MySQL
-- **Admin UI:** Streamlit or Gradio for supervisor review
+- **Admin UI:** **Streamlit** (chosen 2026-07-19 — dashboard-style patient + staff surfaces)
 - **Dependency management:** `pyproject.toml` (PEP 621)
+- **Testing:** lean — one test per AC after each feature lands; no coverage-chasing, no tests for ORM internals
 
 ## Project Structure
 
