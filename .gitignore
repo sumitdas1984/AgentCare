@@ -11,3 +11,11 @@ wheels/
 
 # Environment variables
 .env
+
+# Local SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime data
+/data/
