@@ -1,5 +1,6 @@
 -- AgentCare schema. SQLite-compatible translation of the 11 entities
--- described in docs/PRD.md §6.
+-- described in docs/PRD.md §6, plus the Session table added in FEATURE-1.2
+-- (Authentication & RBAC).
 --
 -- Note: the PRD's pseudo-SQL used "column TYPE FOREIGN KEY REFERENCES x(id)",
 -- which SQLite rejects because FOREIGN KEY belongs in a separate table
@@ -112,7 +113,19 @@ CREATE TABLE IF NOT EXISTS AuditEvent (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Auth sessions (added in FEATURE-1.2). Opaque random tokens backed by
+-- a UNIQUE index. Future HTTP layer can map these to bearer tokens.
+CREATE TABLE IF NOT EXISTS Session (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL REFERENCES User(id),
+    token VARCHAR(64) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Hot read-path indexes
 CREATE INDEX IF NOT EXISTS ix_appointment_patient_id ON Appointment(patient_id);
 CREATE INDEX IF NOT EXISTS ix_workflow_run_status ON WorkflowRun(status);
 CREATE INDEX IF NOT EXISTS ix_escalation_status ON Escalation(status);
+CREATE INDEX IF NOT EXISTS ix_session_token ON Session(token);
+CREATE INDEX IF NOT EXISTS ix_session_user_id ON Session(user_id);
