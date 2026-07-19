@@ -19,3 +19,7 @@ wheels/
 
 # Runtime data
 /data/
+
+# Local-only experiments (notebooks, scratch scripts)
+# Tracked locally only; never committed.
+/experiments/
