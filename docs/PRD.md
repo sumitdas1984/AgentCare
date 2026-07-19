@@ -212,7 +212,7 @@ To ensure the automated evaluation checks pass, the repository structure must ma
 │   ├── agents/
 │   ├── models/
 │   └── database/
-├── requirements.txt              <-- Must explicitly list Python LLM client libraries
+├── pyproject.toml                <-- Manages Python dependencies (replaces requirements.txt)
 ├── README.md                     <-- Containing architecture explanations
 ├── .env.example                  <-- Template file excluding actual keys
 └── .gitignore                    <-- Confirmed rule excluding local .env files
@@ -233,6 +233,6 @@ Initialize a Python project for the AgentCare hackathon challenge using the stru
 2. Implement an agent orchestration model using three distinct agents (Coordinator, Routing, Appointment/Document) running with a declared Python LLM client package.
 3. Enforce the clinical safety guardrail (no diagnoses) in the Safety Agent prompts and route anomalies to the Escalation data tables.
 4. Set up an administrative interface via Streamlit/Gradio to verify patient task flows and handle supervisor approvals.
-5. Provide a mock data seed module to auto-populate departments, doctor listings, and slots. Ensure a robust requirements.txt and standard .env.example matching the architecture parameters are included.
+5. Provide a mock data seed module to auto-populate departments, doctor listings, and slots. Ensure a robust pyproject.toml and standard .env.example matching the architecture parameters are included.
 
 ```
