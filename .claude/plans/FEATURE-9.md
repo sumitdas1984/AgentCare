@@ -1,5 +1,7 @@
 # FEATURE-9 Plan — Persistent Relational Schema (SQLite default)
 
+> **Stack lock-in (2026-07-19):** LangGraph · Anthropic Claude · Streamlit · lean tests (one per AC). These don't directly affect FEATURE-1.1, but they're recorded here so the iteration backlog below stays aligned with the rest of the project.
+
 ## Context
 
 - **GitHub issue:** [#9 — FEATURE-1.1](https://github.com/sumitdas1984/AgentCare/issues/9)

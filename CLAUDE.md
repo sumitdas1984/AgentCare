@@ -37,6 +37,18 @@ Six distinct agent roles, each with its own system prompt and tool surface:
 
 Persistent SQL backend (SQLite default) is mandatory — in-memory state is a disqualification per the PRD. The full schema (11 tables) is in `docs/PRD.md` §6 and must be created under `src/database/`.
 
+## Locked technology choices (decided 2026-07-19)
+
+- **Agent framework:** LangGraph — the explicit `WorkflowRun` state machine and pause/resume on `Escalation` map onto LangGraph's graph + checkpointer model.
+- **LLM provider:** Anthropic Claude — strongest instruction-following for the no-diagnosis guardrail. Declare the `anthropic` SDK in `pyproject.toml` and read `ANTHROPIC_API_KEY` from `.env`.
+- **Front end:** Streamlit — both surfaces are dashboards, not chat UIs.
+
+When the corresponding FEATURE lands (FEATURE-2.1 for the LLM client, FEATURE-2.2 for the LangGraph state machine, FEATURE-5.1 / FEATURE-5.2 for the UIs), don't second-guess these choices — they've been made.
+
+## Testing policy
+
+Lean. After each feature lands, write **one test per acceptance criterion** in the issue body. Lock in only what the AC literally says. Don't test ORM internals, don't write tests for helpers just to bump coverage, and don't write aspirational tests for behavior the code doesn't yet have.
+
 ---
 
 ## Repository layout (what the evaluation suite expects)
